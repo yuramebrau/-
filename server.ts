@@ -16,6 +16,10 @@ const PORT = 3000;
 app.use(express.json({ limit: '10mb' }));
 
 // Gemini Setup
+if (!process.env.GEMINI_API_KEY) {
+  console.warn("WARNING: GEMINI_API_KEY is not set in environment variables!");
+}
+
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 const WORD_SCHEMA = {
@@ -36,21 +40,24 @@ const WORD_SCHEMA = {
 
 // API Routes
 app.post("/api/process-words", async (req, res) => {
+  console.log("Received request to /api/process-words");
   const { input } = req.body;
   
+  if (!process.env.GEMINI_API_KEY) {
+    console.error("API Key missing");
+    return res.status(500).json({ error: "服务器配置错误：缺少 API Key" });
+  }
+
   if (!input) {
-    return res.status(400).json({ error: "Missing input" });
+    return res.status(400).json({ error: "缺少输入内容" });
   }
 
   const isImage = typeof input !== 'string';
+  console.log(`Processing mode: ${isImage ? 'Image' : 'Text'}`);
   
   const prompt = isImage 
     ? "Extract all English words from this image and provide their phonetic symbols, English definitions, Chinese translations, and example sentences with Chinese translations. Return as a JSON array."
     : `Explain the following English words: ${input}. For each word, provide its phonetic symbol, English definition, Chinese translation, and an example sentence with Chinese translation. Return as a JSON array.`;
-
-  const contents = isImage 
-    ? { parts: [{ inlineData: input }, { text: prompt }] }
-    : prompt;
 
   try {
     const response = await ai.models.generateContent({
@@ -65,11 +72,20 @@ app.post("/api/process-words", async (req, res) => {
     });
 
     const text = response.text;
-    if (!text) throw new Error("No response from AI");
+    if (!text) {
+      console.error("Gemini returned empty response");
+      throw new Error("AI 响应为空");
+    }
+    
+    console.log("Successfully processed words");
     res.json(JSON.parse(text));
-  } catch (error) {
-    console.error("Error processing words:", error);
-    res.status(500).json({ error: "Failed to process words" });
+  } catch (error: any) {
+    console.error("Gemini API Error:", error);
+    res.status(500).json({ 
+      error: "AI 处理失败", 
+      details: error.message,
+      suggestion: "如果是图片，请尝试裁剪后只上传单词部分，或检查网络。"
+    });
   }
 });
 
@@ -81,6 +97,10 @@ async function startServer() {
       appType: "spa",
     });
     app.use(vite.middlewares);
+    
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
@@ -88,10 +108,8 @@ async function startServer() {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
-
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
 }
 
 startServer();
+
+export default app;

@@ -30,41 +30,71 @@ const DictationMode: React.FC<{
   const [isFinished, setIsFinished] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const shuffledWords = useMemo(() => {
-    return [...words].sort(() => 0.5 - Math.random());
-  }, [words]);
+  const challengeWords = useMemo(() => 
+    [...words].sort(() => 0.5 - Math.random()),
+    [words]
+  );
 
-  const currentWord = shuffledWords[currentIndex];
+  const currentWord = challengeWords[currentIndex];
+
+  if (challengeWords.length === 0) return null;
 
   const speak = (text: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
-    utterance.rate = 0.9;
+    utterance.rate = 0.7; // Slower rate
     window.speechSynthesis.speak(utterance);
   };
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
     if (!isFinished && !isAnswered) {
+      // First play
       speak(currentWord.word);
+      
+      // Second play after 5 seconds
+      timeoutId = setTimeout(() => {
+        if (!isAnswered) {
+          speak(currentWord.word);
+        }
+      }, 5000);
+
       // Small delay to ensure input is rendered and focusable
       setTimeout(() => inputRef.current?.focus(), 100);
     }
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      window.speechSynthesis.cancel();
+    };
   }, [currentIndex, isAnswered]);
 
   const handleCheck = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (isAnswered || !userInput.trim()) return;
 
-    const correct = userInput.trim().toLowerCase() === currentWord.word.toLowerCase();
+    // Intelligent normalization: lowercase and remove punctuation/special characters
+    const normalize = (str: string) => 
+      str.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?!'"]/g, "").replace(/\s+/g, " ").trim();
+
+    const correct = normalize(userInput) === normalize(currentWord.word);
     setIsCorrect(correct);
     setIsAnswered(true);
     if (correct) {
       setScore(prev => prev + 1);
+      // Automatically mark as mastered if correct
+      if (!currentWord.mastered) {
+        onToggleMastered(currentWord.word);
+      }
+    } else {
+      // If wrong, ensure it's marked as unmastered (included in review scope)
+      if (currentWord.mastered) {
+        onToggleMastered(currentWord.word);
+      }
     }
   };
 
   const nextWord = () => {
-    if (currentIndex < shuffledWords.length - 1) {
+    if (currentIndex < challengeWords.length - 1) {
       setCurrentIndex(prev => prev + 1);
       setUserInput('');
       setIsAnswered(false);
@@ -87,7 +117,7 @@ const DictationMode: React.FC<{
           <div className="space-y-2">
             <h2 className="text-4xl font-black text-text-main">听写完成！</h2>
             <p className="text-xl font-bold text-text-sub">您的得分是</p>
-            <div className="text-6xl font-black text-primary">{score} / {shuffledWords.length}</div>
+            <div className="text-6xl font-black text-primary">{score} / {challengeWords.length}</div>
           </div>
           <button
             onClick={onExit}
@@ -110,7 +140,7 @@ const DictationMode: React.FC<{
               <Keyboard className="text-white" size={20} />
             </div>
             <span className="text-lg font-black text-text-main">听写挑战</span>
-            <span className="text-lg font-black text-primary">{currentIndex + 1} / {shuffledWords.length}</span>
+            <span className="text-lg font-black text-primary">{currentIndex + 1} / {challengeWords.length}</span>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-sm font-black text-text-main">得分: {score}</div>
@@ -217,7 +247,7 @@ const DictationMode: React.FC<{
                     onClick={nextWord}
                     className="flex-[2] py-4 bg-primary text-white text-xl font-black rounded-2xl shadow-lg hover:opacity-90 transition-all bubble-shadow"
                   >
-                    {currentIndex === shuffledWords.length - 1 ? '查看结果' : '下一个'}
+                    {currentIndex === challengeWords.length - 1 ? '查看结果' : '下一个'}
                   </button>
                 </div>
               </motion.div>
@@ -240,7 +270,9 @@ const QuizMode: React.FC<{
   const [isAnswered, setIsAnswered] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
-  const questions = useMemo(() => {
+  // Stabilize questions for the duration of the challenge
+  const quizQuestions = useMemo(() => {
+    if (words.length === 0) return [];
     return words.map((word) => {
       const types: QuizQuestion['type'][] = ['translation', 'definition', 'example'];
       const type = types[Math.floor(Math.random() * types.length)];
@@ -283,7 +315,9 @@ const QuizMode: React.FC<{
     }).sort(() => 0.5 - Math.random());
   }, [words]);
 
-  const currentQuestion = questions[currentIndex];
+  const currentQuestion = quizQuestions[currentIndex];
+
+  if (quizQuestions.length === 0) return null;
 
   const handleOptionSelect = (option: string) => {
     if (isAnswered) return;
@@ -291,11 +325,20 @@ const QuizMode: React.FC<{
     setIsAnswered(true);
     if (option === currentQuestion.correctAnswer) {
       setScore(prev => prev + 1);
+      // Automatically mark as mastered if correct
+      if (!currentQuestion.word.mastered) {
+        onToggleMastered(currentQuestion.word.word);
+      }
+    } else {
+      // If wrong, ensure it's marked as unmastered (included in review scope)
+      if (currentQuestion.word.mastered) {
+        onToggleMastered(currentQuestion.word.word);
+      }
     }
   };
 
   const nextQuestion = () => {
-    if (currentIndex < questions.length - 1) {
+    if (currentIndex < quizQuestions.length - 1) {
       setCurrentIndex(prev => prev + 1);
       setSelectedOption(null);
       setIsAnswered(false);
@@ -318,7 +361,7 @@ const QuizMode: React.FC<{
           <div className="space-y-2">
             <h2 className="text-4xl font-black text-text-main">挑战结束！</h2>
             <p className="text-xl font-bold text-text-sub">您的得分是</p>
-            <div className="text-6xl font-black text-primary">{score} / {questions.length}</div>
+            <div className="text-6xl font-black text-primary">{score} / {quizQuestions.length}</div>
           </div>
           <button
             onClick={onExit}
@@ -341,7 +384,7 @@ const QuizMode: React.FC<{
               <Brain className="text-white" size={20} />
             </div>
             <span className="text-lg font-black text-text-main">知识竞赛</span>
-            <span className="text-lg font-black text-primary">{currentIndex + 1} / {questions.length}</span>
+            <span className="text-lg font-black text-primary">{currentIndex + 1} / {quizQuestions.length}</span>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-sm font-black text-text-main">得分: {score}</div>
@@ -426,7 +469,7 @@ const QuizMode: React.FC<{
                 onClick={nextQuestion}
                 className="w-full py-5 bg-primary text-white text-xl font-black rounded-3xl shadow-lg hover:opacity-90 transition-all bubble-shadow"
               >
-                {currentIndex === questions.length - 1 ? '查看结果' : '下一题'}
+                {currentIndex === quizQuestions.length - 1 ? '查看结果' : '下一题'}
               </button>
             </motion.div>
           )}
@@ -443,23 +486,19 @@ export const StudyMode: React.FC<StudyModeProps> = ({ words, onToggleMastered })
   const [studyFilter, setStudyFilter] = useState<'all' | 'unmastered'>('unmastered');
   const [studyType, setStudyType] = useState<'flashcard' | 'quiz' | 'dictation'>('flashcard');
   const [isStarted, setIsStarted] = useState(false);
+  const [frozenWords, setFrozenWords] = useState<WordEntry[]>([]);
 
   const unmasteredWords = words.filter(w => !w.mastered);
-  const studyWords = studyFilter === 'unmastered' ? unmasteredWords : words;
-  
-  const currentWord = studyWords[currentIndex];
 
-  const nextWord = () => {
-    setIsFlipped(false);
-    setShowDetails(false);
-    setCurrentIndex((prev) => (prev + 1) % studyWords.length);
-  };
-
-  const prevWord = () => {
-    setIsFlipped(false);
-    setShowDetails(false);
-    setCurrentIndex((prev) => (prev - 1 + studyWords.length) % studyWords.length);
-  };
+  // Freeze the words list when the study session starts
+  useEffect(() => {
+    if (isStarted) {
+      setFrozenWords(studyFilter === 'unmastered' ? unmasteredWords : words);
+    } else {
+      setFrozenWords([]);
+      setCurrentIndex(0);
+    }
+  }, [isStarted, studyFilter]);
 
   const speak = (text: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
@@ -559,27 +598,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ words, onToggleMastered })
     );
   }
 
-  if (studyType === 'quiz') {
-    return (
-      <QuizMode 
-        words={studyWords} 
-        onToggleMastered={onToggleMastered} 
-        onExit={() => setIsStarted(false)} 
-      />
-    );
-  }
-
-  if (studyType === 'dictation') {
-    return (
-      <DictationMode 
-        words={studyWords} 
-        onToggleMastered={onToggleMastered} 
-        onExit={() => setIsStarted(false)} 
-      />
-    );
-  }
-
-  if (studyWords.length === 0) {
+  if (isStarted && frozenWords.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-5rem)] bg-bg-main p-8">
         <div className="text-center space-y-6">
@@ -601,6 +620,40 @@ export const StudyMode: React.FC<StudyModeProps> = ({ words, onToggleMastered })
     );
   }
 
+  if (studyType === 'quiz') {
+    return (
+      <QuizMode 
+        words={frozenWords} 
+        onToggleMastered={onToggleMastered} 
+        onExit={() => setIsStarted(false)} 
+      />
+    );
+  }
+
+  if (studyType === 'dictation') {
+    return (
+      <DictationMode 
+        words={frozenWords} 
+        onToggleMastered={onToggleMastered} 
+        onExit={() => setIsStarted(false)} 
+      />
+    );
+  }
+
+  const currentWord = frozenWords[currentIndex];
+
+  const nextWord = () => {
+    setIsFlipped(false);
+    setShowDetails(false);
+    setCurrentIndex((prev) => (prev + 1) % frozenWords.length);
+  };
+
+  const prevWord = () => {
+    setIsFlipped(false);
+    setShowDetails(false);
+    setCurrentIndex((prev) => (prev - 1 + frozenWords.length) % frozenWords.length);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-5rem)] bg-bg-main p-8">
       <div className="w-full max-w-2xl space-y-10">
@@ -613,7 +666,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ words, onToggleMastered })
             <span className="text-lg font-bold text-text-main">
               {studyFilter === 'unmastered' ? '复习未掌握' : '全部挑战'}
             </span>
-            <span className="text-lg font-black text-primary">{currentIndex + 1} / {studyWords.length}</span>
+            <span className="text-lg font-black text-primary">{currentIndex + 1} / {frozenWords.length}</span>
           </div>
           <div className="flex items-center gap-4">
             <button

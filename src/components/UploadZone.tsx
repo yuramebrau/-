@@ -22,8 +22,8 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onProcess, isProcessing 
       const base64 = (reader.result as string).split(',')[1];
       try {
         await onProcess({ mimeType: file.type, data: base64 });
-      } catch (err) {
-        setError('哎呀，图片处理失败了，请再试一次吧！');
+      } catch (err: any) {
+        setError(err.message || '哎呀，图片处理失败了，请再试一次吧！');
       }
     };
     reader.readAsDataURL(file);
@@ -42,8 +42,8 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onProcess, isProcessing 
     try {
       await onProcess(textInput);
       setTextInput('');
-    } catch (err) {
-      setError('文字处理出错了，请检查一下单词哦！');
+    } catch (err: any) {
+      setError(err.message || '文字处理出错了，请检查一下单词哦！');
     }
   };
 

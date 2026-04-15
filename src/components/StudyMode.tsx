@@ -30,34 +30,43 @@ const DictationMode: React.FC<{
   const [isFinished, setIsFinished] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const challengeWords = useMemo(() => 
-    [...words].sort(() => 0.5 - Math.random()),
+  const challengeData = useMemo(() => 
+    [...words]
+      .sort(() => 0.5 - Math.random())
+      .map(word => ({
+        word,
+        audioMode: 'zh' as 'en' | 'zh'
+      })),
     [words]
   );
 
-  const currentWord = challengeWords[currentIndex];
+  const currentData = challengeData[currentIndex];
+  const currentWord = currentData?.word;
 
-  if (challengeWords.length === 0) return null;
+  if (challengeData.length === 0) return null;
 
-  const speak = (text: string) => {
+  const speak = (text: string, lang: string = 'en-US') => {
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.7; // Slower rate
+    utterance.lang = lang;
+    utterance.rate = lang === 'zh-CN' ? 0.6 : 0.7; // Even slower for Chinese
     window.speechSynthesis.speak(utterance);
   };
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
-    if (!isFinished && !isAnswered) {
+    if (!isFinished && !isAnswered && currentData) {
+      const textToSpeak = currentData.audioMode === 'en' ? currentWord.word : currentWord.translation;
+      const lang = currentData.audioMode === 'en' ? 'en-US' : 'zh-CN';
+
       // First play
-      speak(currentWord.word);
+      speak(textToSpeak, lang);
       
-      // Second play after 5 seconds
+      // Second play after 8 seconds
       timeoutId = setTimeout(() => {
         if (!isAnswered) {
-          speak(currentWord.word);
+          speak(textToSpeak, lang);
         }
-      }, 5000);
+      }, 8000);
 
       // Small delay to ensure input is rendered and focusable
       setTimeout(() => inputRef.current?.focus(), 100);
@@ -66,17 +75,21 @@ const DictationMode: React.FC<{
       if (timeoutId) clearTimeout(timeoutId);
       window.speechSynthesis.cancel();
     };
-  }, [currentIndex, isAnswered]);
+  }, [currentIndex, isAnswered, currentData]);
 
   const handleCheck = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (isAnswered || !userInput.trim()) return;
 
-    // Intelligent normalization: lowercase and remove punctuation/special characters
+    // Intelligent normalization: lowercase and remove punctuation/special characters (including Chinese/smart quotes)
     const normalize = (str: string) => 
-      str.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?!'"]/g, "").replace(/\s+/g, " ").trim();
+      str.toLowerCase()
+         .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?!'‘’"“”]/g, "")
+         .replace(/\s+/g, " ")
+         .trim();
 
-    const correct = normalize(userInput) === normalize(currentWord.word);
+    const correct = normalize(userInput) === normalize(currentWord.word) || 
+                    normalize(userInput) === normalize(currentWord.translation);
     setIsCorrect(correct);
     setIsAnswered(true);
     if (correct) {
@@ -85,6 +98,10 @@ const DictationMode: React.FC<{
       if (!currentWord.mastered) {
         onToggleMastered(currentWord.word);
       }
+      // Automatically proceed to next word after a short delay if correct
+      setTimeout(() => {
+        nextWord();
+      }, 1000);
     } else {
       // If wrong, ensure it's marked as unmastered (included in review scope)
       if (currentWord.mastered) {
@@ -94,7 +111,7 @@ const DictationMode: React.FC<{
   };
 
   const nextWord = () => {
-    if (currentIndex < challengeWords.length - 1) {
+    if (currentIndex < challengeData.length - 1) {
       setCurrentIndex(prev => prev + 1);
       setUserInput('');
       setIsAnswered(false);
@@ -117,7 +134,7 @@ const DictationMode: React.FC<{
           <div className="space-y-2">
             <h2 className="text-4xl font-black text-text-main">听写完成！</h2>
             <p className="text-xl font-bold text-text-sub">您的得分是</p>
-            <div className="text-6xl font-black text-primary">{score} / {challengeWords.length}</div>
+            <div className="text-6xl font-black text-primary">{score} / {challengeData.length}</div>
           </div>
           <button
             onClick={onExit}
@@ -140,7 +157,7 @@ const DictationMode: React.FC<{
               <Keyboard className="text-white" size={20} />
             </div>
             <span className="text-lg font-black text-text-main">听写挑战</span>
-            <span className="text-lg font-black text-primary">{currentIndex + 1} / {challengeWords.length}</span>
+            <span className="text-lg font-black text-primary">{currentIndex + 1} / {challengeData.length}</span>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-sm font-black text-text-main">得分: {score}</div>
@@ -158,7 +175,11 @@ const DictationMode: React.FC<{
         >
           <div className="flex flex-col items-center space-y-8">
             <button
-              onClick={() => speak(currentWord.word)}
+              onClick={() => {
+                const textToSpeak = currentData.audioMode === 'en' ? currentWord.word : currentWord.translation;
+                const lang = currentData.audioMode === 'en' ? 'en-US' : 'zh-CN';
+                speak(textToSpeak, lang);
+              }}
               className="group relative flex h-32 w-32 items-center justify-center rounded-[40px] bg-primary/10 text-primary transition-all hover:scale-110 border-4 border-primary/20 bubble-shadow-hover"
             >
               <Volume2 size={56} />
@@ -167,7 +188,9 @@ const DictationMode: React.FC<{
               </div>
             </button>
             <div className="text-center space-y-2">
-              <p className="text-sm font-black text-text-sub uppercase tracking-widest">请听发音并拼写单词</p>
+              <p className="text-sm font-black text-text-sub uppercase tracking-widest">
+                请听中文播报并拼写英文
+              </p>
               <p className="text-xl font-bold text-text-main">{currentWord.translation}</p>
             </div>
           </div>
@@ -247,7 +270,7 @@ const DictationMode: React.FC<{
                     onClick={nextWord}
                     className="flex-[2] py-4 bg-primary text-white text-xl font-black rounded-2xl shadow-lg hover:opacity-90 transition-all bubble-shadow"
                   >
-                    {currentIndex === challengeWords.length - 1 ? '查看结果' : '下一个'}
+                    {currentIndex === challengeData.length - 1 ? '查看结果' : '下一个'}
                   </button>
                 </div>
               </motion.div>
@@ -329,6 +352,10 @@ const QuizMode: React.FC<{
       if (!currentQuestion.word.mastered) {
         onToggleMastered(currentQuestion.word.word);
       }
+      // Automatically proceed to next question after a short delay if correct
+      setTimeout(() => {
+        nextQuestion();
+      }, 1000);
     } else {
       // If wrong, ensure it's marked as unmastered (included in review scope)
       if (currentQuestion.word.mastered) {

@@ -1,0 +1,6 @@
+{
+  "name": "单词背诵助手 (WordMaster)",
+  "description": "一个智能单词背诵软件，支持拍照或文字输入单词表，自动生成详细解释和例句。",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": []
+}

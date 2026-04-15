@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #ff85a2; /* Soft Pink */
+  --color-secondary: #70d6ff; /* Soft Blue */
+  --color-accent: #ffd166; /* Soft Yellow */
+  --color-success: #06d6a0; /* Mint Green */
+  --color-bg-main: #fffcf2; /* Warm Cream */
+  --color-card: #ffffff;
+  --color-text-main: #432818; /* Dark Brown instead of Black for softness */
+  --color-text-sub: #99582a;
+  --color-border-main: #f7d1cd;
+  
+  --font-sans: 'Quicksand', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-bg-main text-text-main font-sans;
+  }
+}
+
+@layer utilities {
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+  .bubble-shadow {
+    box-shadow: 0 10px 0 0 rgba(247, 209, 205, 0.5);
+  }
+  .bubble-shadow-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 0 0 rgba(247, 209, 205, 0.6);
+  }
+}

@@ -32,14 +32,14 @@ const WordCard: React.FC<WordCardProps> = ({ entry, onToggleMastered, speak }) =
           <div className="flex items-center gap-4">
             <h3 className={cn(
               "text-4xl font-black tracking-tight",
-              entry.mastered ? "text-success" : "text-primary"
+              entry.mastered ? "text-text-main" : "text-primary"
             )}>{entry.word}</h3>
             <button
               onClick={() => speak(entry.word)}
               className={cn(
                 "rounded-full p-3 transition-all",
                 entry.mastered 
-                  ? "bg-success/10 text-success hover:bg-success hover:text-white"
+                  ? "bg-success/10 text-text-main hover:bg-success hover:text-white"
                   : "bg-secondary/10 text-secondary hover:bg-secondary hover:text-white"
               )}
             >
@@ -56,7 +56,7 @@ const WordCard: React.FC<WordCardProps> = ({ entry, onToggleMastered, speak }) =
               "flex items-center gap-2 px-4 py-2 rounded-2xl font-black text-sm transition-all bubble-shadow",
               entry.mastered 
                 ? "bg-success text-white" 
-                : "bg-white text-text-sub border-2 border-border-main hover:border-success hover:text-success"
+                : "bg-white text-text-sub border-2 border-border-main hover:border-text-main hover:text-text-main"
             )}
           >
             {entry.mastered ? <CheckCircle2 size={18} /> : <Circle size={18} />}
@@ -64,7 +64,7 @@ const WordCard: React.FC<WordCardProps> = ({ entry, onToggleMastered, speak }) =
           </button>
           <p className={cn(
             "text-3xl font-bold",
-            entry.mastered ? "text-success/70" : "text-success"
+            entry.mastered ? "text-text-main/70" : "text-text-main"
           )}>{entry.translation}</p>
         </div>
       </div>

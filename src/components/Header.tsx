@@ -81,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({ mode, setMode, hasWords, progres
               style={{ width: `${percentage}%` }}
             />
           </div>
-          <div className="text-sm font-black text-success">
+          <div className="text-sm font-black text-text-main">
             {percentage}%
           </div>
         </div>

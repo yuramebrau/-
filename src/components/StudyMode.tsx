@@ -113,7 +113,7 @@ const DictationMode: React.FC<{
             <span className="text-lg font-black text-primary">{currentIndex + 1} / {shuffledWords.length}</span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-sm font-black text-success">得分: {score}</div>
+            <div className="text-sm font-black text-text-main">得分: {score}</div>
             <div className="h-4 w-px bg-border-main" />
             <button onClick={onExit} className="text-sm font-black text-text-sub hover:text-primary">退出</button>
           </div>
@@ -154,7 +154,7 @@ const DictationMode: React.FC<{
                 className={cn(
                   "w-full px-8 py-6 rounded-3xl border-4 text-3xl font-black text-center transition-all outline-none",
                   !isAnswered && "border-border-main focus:border-primary bg-bg-main",
-                  isAnswered && isCorrect && "border-success bg-success/5 text-success",
+                  isAnswered && isCorrect && "border-success bg-success/5 text-text-main",
                   isAnswered && !isCorrect && "border-red-500 bg-red-50 text-red-500"
                 )}
                 autoFocus
@@ -312,7 +312,7 @@ const QuizMode: React.FC<{
           animate={{ scale: 1, opacity: 1 }}
           className="w-full max-w-md bg-white rounded-[40px] border-4 border-border-main p-10 bubble-shadow text-center space-y-8"
         >
-          <div className="h-32 w-32 bg-success/20 rounded-[40px] flex items-center justify-center mx-auto text-success rotate-6">
+          <div className="h-32 w-32 bg-success/20 rounded-[40px] flex items-center justify-center mx-auto text-text-main rotate-6">
             <Trophy size={64} />
           </div>
           <div className="space-y-2">
@@ -344,7 +344,7 @@ const QuizMode: React.FC<{
             <span className="text-lg font-black text-primary">{currentIndex + 1} / {questions.length}</span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-sm font-black text-success">得分: {score}</div>
+            <div className="text-sm font-black text-text-main">得分: {score}</div>
             <div className="h-4 w-px bg-border-main" />
             <button onClick={onExit} className="text-sm font-black text-text-sub hover:text-primary">退出</button>
           </div>
@@ -379,7 +379,7 @@ const QuizMode: React.FC<{
                   className={cn(
                     "flex items-center justify-between px-8 py-5 rounded-3xl border-4 text-xl font-bold transition-all text-left",
                     !isAnswered && "bg-white border-border-main hover:border-primary hover:bg-primary/5",
-                    isAnswered && isCorrect && "bg-success/10 border-success text-success",
+                    isAnswered && isCorrect && "bg-success/10 border-success text-text-main",
                     isAnswered && isSelected && !isCorrect && "bg-red-50 border-red-500 text-red-500",
                     isAnswered && !isSelected && !isCorrect && "bg-gray-50 border-gray-200 text-gray-400"
                   )}
@@ -583,7 +583,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ words, onToggleMastered })
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-5rem)] bg-bg-main p-8">
         <div className="text-center space-y-6">
-          <div className="h-32 w-32 rounded-[40px] bg-white border-4 border-border-main flex items-center justify-center text-success rotate-6 bubble-shadow mx-auto">
+          <div className="h-32 w-32 rounded-[40px] bg-white border-4 border-border-main flex items-center justify-center text-text-main rotate-6 bubble-shadow mx-auto">
             <Trophy size={64} />
           </div>
           <div className="space-y-2">
@@ -657,7 +657,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ words, onToggleMastered })
                 className={cn(
                   "absolute top-8 right-8 flex items-center gap-2 px-4 py-2 rounded-2xl font-black text-sm transition-all bubble-shadow",
                   currentWord.mastered 
-                    ? "bg-white text-success" 
+                    ? "bg-white text-text-main" 
                     : (isFlipped ? "bg-white/20 text-white border-2 border-white/50" : "bg-bg-main text-text-sub border-2 border-border-main")
                 )}
               >
@@ -669,7 +669,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ words, onToggleMastered })
                 <div className="space-y-8">
                   <h3 className={cn(
                     "text-8xl font-black tracking-tighter drop-shadow-sm",
-                    currentWord.mastered ? "text-success" : "text-primary"
+                    currentWord.mastered ? "text-text-main" : "text-primary"
                   )}>{currentWord.word}</h3>
                   <p className="text-2xl text-text-sub font-bold">{currentWord.phonetic}</p>
                   <button

@@ -1,5 +1,5 @@
 import express from "express";
-import { createServer as createViteServer } from "vite";
+// 注意：我去掉了原来在这里的 import { createServer ... } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import { GoogleGenAI, Type } from "@google/genai";
@@ -92,15 +92,22 @@ app.post("/api/process-words", async (req, res) => {
 // Vite middleware setup
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-    
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-    });
+    try {
+      // 核心修复点：将原来的顶层静态引入，改成了这里的动态引入 (Dynamic Import)
+      // 这样 Vercel 线上打包时就不会报错了
+      const vite = await import("vite");
+      const viteServer = await vite.createServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(viteServer.middlewares);
+      
+      app.listen(PORT, "0.0.0.0", () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+      });
+    } catch (error) {
+      console.log("Skipping Vite in production environment.");
+    }
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));

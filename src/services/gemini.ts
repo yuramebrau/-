@@ -16,8 +16,21 @@ export async function processWords(input: string | { mimeType: string; data: str
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || `请求失败: ${response.status}`);
+      let errorMessage = `请求失败: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        // If it's a Gemini API error object forwarded by our server
+        if (errorData.error) {
+          if (typeof errorData.error === 'object' && errorData.error.message) {
+            errorMessage = errorData.error.message;
+          } else {
+            errorMessage = typeof errorData.error === 'string' ? errorData.error : JSON.stringify(errorData.error);
+          }
+        }
+      } catch (e) {
+        // Fallback if not JSON
+      }
+      throw new Error(errorMessage);
     }
 
     return await response.json();

@@ -69,9 +69,11 @@ app.post("/api/gemini", async (req, res) => {
     res.json(JSON.parse(text));
   } catch (error: any) {
     console.error("Server API Error:", error);
+    // If the error is from the Gemini SDK, it might have an 'error' property with codes
+    const message = error.message || "AI 处理失败";
     res.status(500).json({ 
-      error: error.message || "AI processing failed",
-      status: error.status || "INTERNAL_SERVER_ERROR"
+      error: message,
+      details: error.status || "UNKNOWN_ERROR"
     });
   }
 });

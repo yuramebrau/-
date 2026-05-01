@@ -57,6 +57,16 @@ export default function App() {
     );
   };
 
+  const deleteWord = (wordToDelete: string) => {
+    if (window.confirm(`确定要从单词本中删除 "${wordToDelete}" 吗？`)) {
+      setWords((prev) => prev.filter((w) => w.word !== wordToDelete));
+    }
+  };
+
+  const deleteWords = (wordsToDelete: string[]) => {
+    setWords((prev) => prev.filter((w) => !wordsToDelete.includes(w.word)));
+  };
+
   const masteredCount = words.filter(w => w.mastered).length;
 
   return (
@@ -77,7 +87,12 @@ export default function App() {
         )}
         
         {mode === 'list' && words.length > 0 && (
-          <WordList words={words} onToggleMastered={toggleMastered} />
+          <WordList 
+            words={words} 
+            onToggleMastered={toggleMastered} 
+            onDeleteWord={deleteWord} 
+            onDeleteWords={deleteWords}
+          />
         )}
         
         {mode === 'study' && words.length > 0 && (

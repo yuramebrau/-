@@ -9,17 +9,18 @@ export const unlockSpeech = () => {
   if (isUnlocked || typeof window === 'undefined') return;
   
   try {
-    // Some browsers need a real utterance even if empty
-    const utterance = new SpeechSynthesisUtterance('');
+    // 1. Create a truly empty but valid utterance
+    const utterance = new SpeechSynthesisUtterance(' ');
+    utterance.volume = 0; // Silent
     window.speechSynthesis.speak(utterance);
     
-    // Also try to resume if suspended (some browsers use AudioContext logic for Speech)
-    if (window.speechSynthesis.paused) {
+    // 2. iOS/Safari often need resume() inside a user-initiated event
+    if (window.speechSynthesis && window.speechSynthesis.resume) {
       window.speechSynthesis.resume();
     }
     
     isUnlocked = true;
-    console.log('Speech synthesis unlocked');
+    console.log('Speech synthesis unlocked on mobile');
   } catch (e) {
     console.error('Failed to unlock speech synthesis', e);
   }
@@ -34,33 +35,31 @@ export const speak = (text: string, lang: string = 'en-US', rate: number = 0.8) 
     return;
   }
 
-  // Ensure unlocked if not already
+  // Force unlock if requested during a user action
   if (!isUnlocked) {
     unlockSpeech();
   }
 
-  // Cancel any ongoing speech
+  // Cancel any ongoing speech to avoid queueing
   window.speechSynthesis.cancel();
+  
+  // iOS/Safari fix: Ensure engine is resumed
+  if (window.speechSynthesis.paused) {
+    window.speechSynthesis.resume();
+  }
 
-  // Create utterance
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
   utterance.rate = rate;
   utterance.pitch = 1.0;
   utterance.volume = 1.0;
 
-  // On some mobile devices, we MUST keep a reference to the utterance
-  // to prevent it from being garbage collected mid-speech.
-  (window as any)._activeUtterance = utterance;
+  // IMPORTANT: Keep a global reference to prevent garbage collection on mobile
+  // This is a common cause for speech stopping halfway or not starting on iOS
+  (window as any)._lastUtterance = utterance;
 
-  // Error handling
-  utterance.onerror = (event) => {
-    console.error('SpeechSynthesisUtterance error:', event.error);
-    if (event.error === 'not-allowed') {
-      console.warn('Speech synthesis blocked by browser. User interaction required.');
-    }
-  };
+  utterance.onstart = () => console.log('Speech started:', text);
+  utterance.onerror = (event) => console.error('Speech error:', event);
 
-  // Speak
   window.speechSynthesis.speak(utterance);
 };

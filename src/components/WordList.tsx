@@ -3,6 +3,7 @@ import { Volume2, Star, CheckCircle2, Circle, ChevronDown, Trash2, CheckSquare, 
 import { motion, AnimatePresence } from 'motion/react';
 import { WordEntry } from '../types';
 import { cn } from '../lib/utils';
+import { speak } from '../lib/speech';
 
 interface WordCardProps {
   entry: WordEntry;
@@ -151,8 +152,6 @@ const WordCard: React.FC<WordCardProps> = ({ entry, onToggleMastered, onDelete, 
     </div>
   );
 };
-
-import { speak } from '../lib/speech';
 
 export const WordList: React.FC<WordListProps> = ({ words, onToggleMastered, onDeleteWord, onDeleteWords }) => {
   const [showOnlyUnmastered, setShowOnlyUnmastered] = React.useState(false);

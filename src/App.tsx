@@ -6,11 +6,27 @@ import { WordList } from './components/WordList';
 import { StudyMode } from './components/StudyMode';
 import { processWords } from './services/gemini';
 import { WordEntry, AppMode } from './types';
+import { unlockSpeech } from './lib/speech';
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>('input');
   const [words, setWords] = useState<WordEntry[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Global unlock for mobile speech on first interaction
+  useEffect(() => {
+    const handleFirstInteraction = () => {
+      unlockSpeech();
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
+    };
+    window.addEventListener('click', handleFirstInteraction);
+    window.addEventListener('touchstart', handleFirstInteraction);
+    return () => {
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
+    };
+  }, []);
 
   // Load words from localStorage on mount
   useEffect(() => {

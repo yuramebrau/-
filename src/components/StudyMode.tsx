@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, ChevronRight, RotateCcw, Volume2, Eye, EyeOff, Trophy, CheckCircle2, Circle, Gamepad2, Brain, Check, X, Keyboard, Send } from 'lucide-react';
 import { WordEntry } from '../types';
 import { cn } from '../lib/utils';
+import { speak, unlockSpeech } from '../lib/speech';
 
 interface QuizQuestion {
   type: 'translation' | 'definition' | 'example';
@@ -45,26 +46,20 @@ const DictationMode: React.FC<{
 
   if (challengeData.length === 0) return null;
 
-  const speak = (text: string, lang: string = 'en-US') => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang;
-    utterance.rate = lang === 'zh-CN' ? 0.6 : 0.7; // Even slower for Chinese
-    window.speechSynthesis.speak(utterance);
-  };
-
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
     if (!isFinished && !isAnswered && currentData) {
       const textToSpeak = currentData.audioMode === 'en' ? currentWord.word : currentWord.translation;
       const lang = currentData.audioMode === 'en' ? 'en-US' : 'zh-CN';
+      const rate = lang === 'zh-CN' ? 0.6 : 0.7;
 
       // First play
-      speak(textToSpeak, lang);
+      speak(textToSpeak, lang, rate);
       
       // Second play after 8 seconds
       timeoutId = setTimeout(() => {
         if (!isAnswered) {
-          speak(textToSpeak, lang);
+          speak(textToSpeak, lang, rate);
         }
       }, 8000);
 
@@ -122,23 +117,23 @@ const DictationMode: React.FC<{
 
   if (isFinished) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-5rem)] bg-bg-main p-8">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-5rem)] bg-bg-main p-4 md:p-8">
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="w-full max-w-md bg-white rounded-[40px] border-4 border-border-main p-10 bubble-shadow text-center space-y-8"
+          className="w-full max-w-md bg-white rounded-[32px] md:rounded-[40px] border-4 border-border-main p-6 md:p-10 bubble-shadow text-center space-y-6 md:space-y-8"
         >
-          <div className="h-32 w-32 bg-accent/20 rounded-[40px] flex items-center justify-center mx-auto text-accent rotate-6">
-            <Keyboard size={64} />
+          <div className="h-20 w-20 md:h-32 md:w-32 bg-accent/20 rounded-[24px] md:rounded-[40px] flex items-center justify-center mx-auto text-accent rotate-6">
+            <Keyboard size={40} md:size={64} />
           </div>
           <div className="space-y-2">
-            <h2 className="text-4xl font-black text-text-main">听写完成！</h2>
-            <p className="text-xl font-bold text-text-sub">您的得分是</p>
-            <div className="text-6xl font-black text-primary">{score} / {challengeData.length}</div>
+            <h2 className="text-2xl md:text-4xl font-black text-text-main">听写完成！</h2>
+            <p className="text-lg md:text-xl font-bold text-text-sub">您的得分是</p>
+            <div className="text-4xl md:text-6xl font-black text-primary">{score} / {challengeData.length}</div>
           </div>
           <button
             onClick={onExit}
-            className="w-full py-5 bg-primary text-white text-xl font-black rounded-3xl shadow-lg shadow-primary/20 hover:opacity-90 transition-all bubble-shadow"
+            className="w-full py-4 md:py-5 bg-primary text-white text-lg md:text-xl font-black rounded-2xl md:rounded-3xl shadow-lg shadow-primary/20 hover:opacity-90 transition-all bubble-shadow"
           >
             返回
           </button>
@@ -148,21 +143,21 @@ const DictationMode: React.FC<{
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-5rem)] bg-bg-main p-8">
-      <div className="w-full max-w-2xl space-y-8">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] bg-bg-main p-4 md:p-8">
+      <div className="w-full max-w-2xl space-y-4 md:space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-white rounded-[32px] border-4 border-border-main shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="bg-accent p-2 rounded-xl">
-              <Keyboard className="text-white" size={20} />
+        <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 bg-white rounded-[24px] md:rounded-[32px] border-2 md:border-4 border-border-main shadow-sm">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="bg-accent p-1.5 md:p-2 rounded-lg md:rounded-xl">
+              <Keyboard className="text-white" size={16} md:size={20} />
             </div>
-            <span className="text-lg font-black text-text-main">听写挑战</span>
-            <span className="text-lg font-black text-primary">{currentIndex + 1} / {challengeData.length}</span>
+            <span className="text-sm md:text-lg font-black text-text-main">听写</span>
+            <span className="text-sm md:text-lg font-black text-primary">{currentIndex + 1}/{challengeData.length}</span>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-sm font-black text-text-main">得分: {score}</div>
-            <div className="h-4 w-px bg-border-main" />
-            <button onClick={onExit} className="text-sm font-black text-text-sub hover:text-primary">退出</button>
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="text-xs md:text-sm font-black text-text-main">得分: {score}</div>
+            <div className="h-3 md:h-4 w-px bg-border-main" />
+            <button onClick={onExit} className="text-xs md:text-sm font-black text-text-sub hover:text-primary">退出</button>
           </div>
         </div>
 
@@ -171,31 +166,32 @@ const DictationMode: React.FC<{
           key={currentIndex}
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="bg-white rounded-[40px] border-4 border-border-main p-10 bubble-shadow space-y-10"
+          className="bg-white rounded-[32px] md:rounded-[40px] border-4 border-border-main p-6 md:p-10 bubble-shadow space-y-6 md:space-y-10"
         >
-          <div className="flex flex-col items-center space-y-8">
+          <div className="flex flex-col items-center space-y-4 md:space-y-8">
             <button
               onClick={() => {
                 const textToSpeak = currentData.audioMode === 'en' ? currentWord.word : currentWord.translation;
                 const lang = currentData.audioMode === 'en' ? 'en-US' : 'zh-CN';
-                speak(textToSpeak, lang);
+                const rate = lang === 'zh-CN' ? 0.6 : 0.7;
+                speak(textToSpeak, lang, rate);
               }}
-              className="group relative flex h-32 w-32 items-center justify-center rounded-[40px] bg-primary/10 text-primary transition-all hover:scale-110 border-4 border-primary/20 bubble-shadow-hover"
+              className="group relative flex h-24 w-24 md:h-32 md:w-32 items-center justify-center rounded-[24px] md:rounded-[40px] bg-primary/10 text-primary transition-all hover:scale-110 border-4 border-primary/20 bubble-shadow-hover"
             >
-              <Volume2 size={56} />
-              <div className="absolute -bottom-2 -right-2 h-8 w-8 bg-white rounded-full border-2 border-primary flex items-center justify-center text-primary shadow-sm">
-                <RotateCcw size={14} />
+              <Volume2 size={40} md:size={56} />
+              <div className="absolute -bottom-1 -right-1 md:-bottom-2 md:-right-2 h-6 w-6 md:h-8 md:w-8 bg-white rounded-full border-2 border-primary flex items-center justify-center text-primary shadow-sm">
+                <RotateCcw size={12} md:size={14} />
               </div>
             </button>
-            <div className="text-center space-y-2">
-              <p className="text-sm font-black text-text-sub uppercase tracking-widest">
-                请听中文播报并拼写英文
+            <div className="text-center space-y-1 md:space-y-2">
+              <p className="text-[10px] md:text-sm font-black text-text-sub uppercase tracking-widest">
+                听播报并拼写
               </p>
-              <p className="text-xl font-bold text-text-main">{currentWord.translation}</p>
+              <p className="text-lg md:text-xl font-bold text-text-main">{currentWord.translation}</p>
             </div>
           </div>
 
-          <form onSubmit={handleCheck} className="space-y-6">
+          <form onSubmit={handleCheck} className="space-y-4 md:space-y-6">
             <div className="relative">
               <input
                 ref={inputRef}
@@ -203,9 +199,9 @@ const DictationMode: React.FC<{
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 disabled={isAnswered}
-                placeholder="在此输入单词..."
+                placeholder="拼写..."
                 className={cn(
-                  "w-full px-8 py-6 rounded-3xl border-4 text-3xl font-black text-center transition-all outline-none",
+                  "w-full px-4 md:px-8 py-4 md:py-6 rounded-2xl md:rounded-3xl border-2 md:border-4 text-2xl md:text-3xl font-black text-center transition-all outline-none",
                   !isAnswered && "border-border-main focus:border-primary bg-bg-main",
                   isAnswered && isCorrect && "border-success bg-success/5 text-text-main",
                   isAnswered && !isCorrect && "border-red-500 bg-red-50 text-red-500"
@@ -376,23 +372,23 @@ const QuizMode: React.FC<{
 
   if (isFinished) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-5rem)] bg-bg-main p-8">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-5rem)] bg-bg-main p-4 md:p-8">
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="w-full max-w-md bg-white rounded-[40px] border-4 border-border-main p-10 bubble-shadow text-center space-y-8"
+          className="w-full max-w-md bg-white rounded-[32px] md:rounded-[40px] border-4 border-border-main p-6 md:p-10 bubble-shadow text-center space-y-6 md:space-y-8"
         >
-          <div className="h-32 w-32 bg-success/20 rounded-[40px] flex items-center justify-center mx-auto text-text-main rotate-6">
-            <Trophy size={64} />
+          <div className="h-20 w-20 md:h-32 md:w-32 bg-success/20 rounded-[24px] md:rounded-[40px] flex items-center justify-center mx-auto text-text-main rotate-6">
+            <Trophy size={40} md:size={64} />
           </div>
           <div className="space-y-2">
-            <h2 className="text-4xl font-black text-text-main">挑战结束！</h2>
-            <p className="text-xl font-bold text-text-sub">您的得分是</p>
-            <div className="text-6xl font-black text-primary">{score} / {quizQuestions.length}</div>
+            <h2 className="text-2xl md:text-4xl font-black text-text-main">挑战结束！</h2>
+            <p className="text-lg md:text-xl font-bold text-text-sub">您的得分是</p>
+            <div className="text-4xl md:text-6xl font-black text-primary">{score} / {quizQuestions.length}</div>
           </div>
           <button
             onClick={onExit}
-            className="w-full py-5 bg-primary text-white text-xl font-black rounded-3xl shadow-lg shadow-primary/20 hover:opacity-90 transition-all bubble-shadow"
+            className="w-full py-4 md:py-5 bg-primary text-white text-lg md:text-xl font-black rounded-2xl md:rounded-3xl shadow-lg shadow-primary/20 hover:opacity-90 transition-all bubble-shadow"
           >
             返回
           </button>
@@ -402,21 +398,21 @@ const QuizMode: React.FC<{
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-5rem)] bg-bg-main p-8">
-      <div className="w-full max-w-2xl space-y-8">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] bg-bg-main p-4 md:p-8">
+      <div className="w-full max-w-2xl space-y-4 md:space-y-8">
         {/* Quiz Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-white rounded-[32px] border-4 border-border-main shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary p-2 rounded-xl">
-              <Brain className="text-white" size={20} />
+        <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 bg-white rounded-[24px] md:rounded-[32px] border-2 md:border-4 border-border-main shadow-sm">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="bg-primary p-1.5 md:p-2 rounded-lg md:rounded-xl">
+              <Brain className="text-white" size={16} md:size={20} />
             </div>
-            <span className="text-lg font-black text-text-main">知识竞赛</span>
-            <span className="text-lg font-black text-primary">{currentIndex + 1} / {quizQuestions.length}</span>
+            <span className="text-sm md:text-lg font-black text-text-main">竞赛</span>
+            <span className="text-sm md:text-lg font-black text-primary">{currentIndex + 1}/{quizQuestions.length}</span>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-sm font-black text-text-main">得分: {score}</div>
-            <div className="h-4 w-px bg-border-main" />
-            <button onClick={onExit} className="text-sm font-black text-text-sub hover:text-primary">退出</button>
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="text-xs md:text-sm font-black text-text-main">得分: {score}</div>
+            <div className="h-3 md:h-4 w-px bg-border-main" />
+            <button onClick={onExit} className="text-xs md:text-sm font-black text-text-sub hover:text-primary">退出</button>
           </div>
         </div>
 
@@ -425,18 +421,18 @@ const QuizMode: React.FC<{
           key={currentIndex}
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          className="bg-white rounded-[40px] border-4 border-border-main p-10 bubble-shadow space-y-10"
+          className="bg-white rounded-[32px] md:rounded-[40px] border-4 border-border-main p-6 md:p-10 bubble-shadow space-y-6 md:space-y-10"
         >
-          <div className="space-y-4 text-center">
-            <span className="inline-block px-4 py-1 bg-accent/10 rounded-full text-xs font-black text-accent uppercase tracking-widest">
+          <div className="space-y-2 md:space-y-4 text-center">
+            <span className="inline-block px-3 md:px-4 py-0.5 md:py-1 bg-accent/10 rounded-full text-[10px] md:text-xs font-black text-accent uppercase tracking-widest">
               {currentQuestion.type === 'translation' ? '翻译题' : currentQuestion.type === 'definition' ? '释义题' : '填空题'}
             </span>
-            <h3 className="text-3xl font-bold text-text-main leading-relaxed whitespace-pre-wrap">
+            <h3 className="text-xl md:text-3xl font-bold text-text-main leading-relaxed whitespace-pre-wrap">
               {currentQuestion.question}
             </h3>
           </div>
 
-          <div className="grid gap-4">
+          <div className="grid gap-3 md:gap-4">
             {currentQuestion.options.map((option, idx) => {
               const isCorrect = option === currentQuestion.correctAnswer;
               const isSelected = option === selectedOption;
@@ -447,7 +443,7 @@ const QuizMode: React.FC<{
                   onClick={() => handleOptionSelect(option)}
                   disabled={isAnswered}
                   className={cn(
-                    "flex items-center justify-between px-8 py-5 rounded-3xl border-4 text-xl font-bold transition-all text-left",
+                    "flex items-center justify-between px-4 md:px-8 py-3 md:py-5 rounded-2xl md:rounded-3xl border-2 md:border-4 text-lg md:text-xl font-bold transition-all text-left",
                     !isAnswered && "bg-white border-border-main hover:border-primary hover:bg-primary/5",
                     isAnswered && isCorrect && "bg-success/10 border-success text-text-main",
                     isAnswered && isSelected && !isCorrect && "bg-red-50 border-red-500 text-red-500",
@@ -455,8 +451,8 @@ const QuizMode: React.FC<{
                   )}
                 >
                   <span>{option}</span>
-                  {isAnswered && isCorrect && <Check size={24} />}
-                  {isAnswered && isSelected && !isCorrect && <X size={24} />}
+                  {isAnswered && isCorrect && <Check size={20} md:size={24} />}
+                  {isAnswered && isSelected && !isCorrect && <X size={20} md:size={24} />}
                 </button>
               );
             })}
@@ -470,12 +466,7 @@ const QuizMode: React.FC<{
             >
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => {
-                    const utterance = new SpeechSynthesisUtterance(currentQuestion.word.word);
-                    utterance.lang = 'en-US';
-                    utterance.rate = 0.9;
-                    window.speechSynthesis.speak(utterance);
-                  }}
+                  onClick={() => speak(currentQuestion.word.word)}
                   className="flex items-center gap-2 px-4 py-2 bg-secondary/10 text-secondary rounded-xl font-bold hover:bg-secondary hover:text-white transition-all"
                 >
                   <Volume2 size={18} />
@@ -527,98 +518,94 @@ export const StudyMode: React.FC<StudyModeProps> = ({ words, onToggleMastered })
     }
   }, [isStarted, studyFilter]);
 
-  const speak = (text: string) => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.9; // Slightly slower for clarity
-    window.speechSynthesis.speak(utterance);
-  };
-
   if (!isStarted) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-5rem)] bg-bg-main p-8">
-        <div className="w-full max-w-md bg-white rounded-[40px] border-4 border-border-main p-10 bubble-shadow space-y-8 text-center">
-          <div className="h-24 w-24 bg-accent/20 rounded-[32px] flex items-center justify-center mx-auto text-accent rotate-12">
-            <Gamepad2 size={48} />
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] bg-bg-main p-4 md:p-8 shrink-0">
+        <div className="w-full max-w-md bg-white rounded-[32px] md:rounded-[40px] border-2 md:border-4 border-border-main p-6 md:p-10 bubble-shadow space-y-6 md:space-y-8 text-center overscroll-contain">
+          <div className="h-16 w-16 md:h-24 md:w-24 bg-accent/20 rounded-[20px] md:rounded-[32px] flex items-center justify-center mx-auto text-accent rotate-12">
+            <Gamepad2 size={32} md:size={48} />
           </div>
-          <div className="space-y-2">
-            <h2 className="text-3xl font-black text-text-main">准备好挑战了吗？</h2>
-            <p className="text-lg font-bold text-text-sub">请选择挑战模式：</p>
+          <div className="space-y-1 md:space-y-2">
+            <h2 className="text-2xl md:text-3xl font-black text-text-main">准备挑战了吗？</h2>
+            <p className="text-base md:text-lg font-bold text-text-sub">请选择模式</p>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2 md:gap-3">
             <button
               onClick={() => setStudyType('flashcard')}
               className={cn(
-                "flex flex-col items-center gap-2 p-4 rounded-3xl border-4 transition-all",
+                "flex flex-col items-center gap-1 md:gap-2 p-2 md:p-4 rounded-2xl md:rounded-3xl border-2 md:border-4 transition-all",
                 studyType === 'flashcard' ? "border-primary bg-primary/5" : "border-border-main bg-white"
               )}
             >
-              <RotateCcw size={24} className={studyType === 'flashcard' ? "text-primary" : "text-text-sub"} />
-              <span className="font-black text-xs">经典闪卡</span>
+              <RotateCcw size={20} md:size={24} className={studyType === 'flashcard' ? "text-primary" : "text-text-sub"} />
+              <span className="font-black text-[10px] md:text-xs">闪卡</span>
             </button>
             <button
               onClick={() => setStudyType('quiz')}
               className={cn(
-                "flex flex-col items-center gap-2 p-4 rounded-3xl border-4 transition-all",
+                "flex flex-col items-center gap-1 md:gap-2 p-2 md:p-4 rounded-2xl md:rounded-3xl border-2 md:border-4 transition-all",
                 studyType === 'quiz' ? "border-secondary bg-secondary/5" : "border-border-main bg-white"
               )}
             >
-              <Brain size={24} className={studyType === 'quiz' ? "text-secondary" : "text-text-sub"} />
-              <span className="font-black text-xs">知识竞赛</span>
+              <Brain size={20} md:size={24} className={studyType === 'quiz' ? "text-secondary" : "text-text-sub"} />
+              <span className="font-black text-[10px] md:text-xs">竞赛</span>
             </button>
             <button
               onClick={() => setStudyType('dictation')}
               className={cn(
-                "flex flex-col items-center gap-2 p-4 rounded-3xl border-4 transition-all",
+                "flex flex-col items-center gap-1 md:gap-2 p-2 md:p-4 rounded-2xl md:rounded-3xl border-2 md:border-4 transition-all",
                 studyType === 'dictation' ? "border-accent bg-accent/5" : "border-border-main bg-white"
               )}
             >
-              <Keyboard size={24} className={studyType === 'dictation' ? "text-accent" : "text-text-sub"} />
-              <span className="font-black text-xs">听写挑战</span>
+              <Keyboard size={20} md:size={24} className={studyType === 'dictation' ? "text-accent" : "text-text-sub"} />
+              <span className="font-black text-[10px] md:text-xs">听写</span>
             </button>
           </div>
           
-          <div className="space-y-4">
-            <p className="text-sm font-black text-text-sub uppercase tracking-widest">选择复习范围</p>
-            <div className="grid gap-3">
+          <div className="space-y-2 md:space-y-4">
+            <p className="text-[10px] md:text-sm font-black text-text-sub uppercase tracking-widest text-center">复习范围</p>
+            <div className="grid gap-2 md:gap-3">
               <button
                 onClick={() => setStudyFilter('unmastered')}
                 className={cn(
-                  "flex items-center justify-between px-6 py-4 rounded-2xl border-4 transition-all",
+                  "flex items-center justify-between px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl border-2 md:border-4 transition-all",
                   studyFilter === 'unmastered' ? "border-primary bg-primary/5" : "border-border-main bg-white"
                 )}
               >
-                <div className="flex items-center gap-3">
-                  <div className="h-4 w-4 rounded-full border-2 border-primary flex items-center justify-center">
-                    {studyFilter === 'unmastered' && <div className="h-2 w-2 rounded-full bg-primary" />}
+                <div className="flex items-center gap-2 md:gap-3">
+                  <div className="h-3 w-3 md:h-4 md:w-4 rounded-full border-2 border-primary flex items-center justify-center">
+                    {studyFilter === 'unmastered' && <div className="h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-primary" />}
                   </div>
-                  <span className="text-lg font-black text-text-main">只看未掌握 ({unmasteredWords.length})</span>
+                  <span className="text-base md:text-lg font-black text-text-main">未掌握 ({unmasteredWords.length})</span>
                 </div>
               </button>
               <button
                 onClick={() => setStudyFilter('all')}
                 className={cn(
-                  "flex items-center justify-between px-6 py-4 rounded-2xl border-4 transition-all",
+                  "flex items-center justify-between px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl border-2 md:border-4 transition-all",
                   studyFilter === 'all' ? "border-secondary bg-secondary/5" : "border-border-main bg-white"
                 )}
               >
-                <div className="flex items-center gap-3">
-                  <div className="h-4 w-4 rounded-full border-2 border-secondary flex items-center justify-center">
-                    {studyFilter === 'all' && <div className="h-2 w-2 rounded-full bg-secondary" />}
+                <div className="flex items-center gap-2 md:gap-3">
+                  <div className="h-3 w-3 md:h-4 md:w-4 rounded-full border-2 border-secondary flex items-center justify-center">
+                    {studyFilter === 'all' && <div className="h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-secondary" />}
                   </div>
-                  <span className="text-lg font-black text-text-main">查看全部单词 ({words.length})</span>
+                  <span className="text-base md:text-lg font-black text-text-main">全部 ({words.length})</span>
                 </div>
               </button>
             </div>
           </div>
 
           <button
-            onClick={() => setIsStarted(true)}
+            onClick={() => {
+              unlockSpeech();
+              setIsStarted(true);
+            }}
             disabled={studyFilter === 'unmastered' && unmasteredWords.length === 0}
-            className="w-full py-5 bg-primary text-white text-xl font-black rounded-3xl shadow-lg shadow-primary/20 hover:opacity-90 transition-all bubble-shadow disabled:opacity-50"
+            className="w-full py-4 md:py-5 bg-primary text-white text-lg md:text-xl font-black rounded-2xl md:rounded-3xl shadow-lg shadow-primary/20 hover:opacity-90 transition-all bubble-shadow disabled:opacity-50"
           >
-            开始挑战
+            开始
           </button>
         </div>
       </div>
@@ -682,39 +669,39 @@ export const StudyMode: React.FC<StudyModeProps> = ({ words, onToggleMastered })
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-5rem)] bg-bg-main p-8">
-      <div className="w-full max-w-2xl space-y-10">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] bg-bg-main p-4 md:p-8 overflow-hidden">
+      <div className="w-full max-w-2xl space-y-6 md:space-y-10">
         {/* Progress Info */}
-        <div className="flex items-center justify-between px-4 bg-white p-4 rounded-[32px] border-4 border-border-main shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="bg-success p-1.5 rounded-lg">
-              <Trophy className="text-white" size={18} />
+        <div className="flex items-center justify-between px-3 md:px-4 bg-white p-3 md:p-4 rounded-[24px] md:rounded-[32px] border-2 md:border-4 border-border-main shadow-sm">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="bg-success p-1 md:p-1.5 rounded-lg">
+              <Trophy className="text-white" size={14} md:size={18} />
             </div>
-            <span className="text-lg font-bold text-text-main">
-              {studyFilter === 'unmastered' ? '复习未掌握' : '全部挑战'}
+            <span className="text-sm md:text-lg font-bold text-text-main hidden xs:block">
+              {studyFilter === 'unmastered' ? '复习' : '挑战'}
             </span>
-            <span className="text-lg font-black text-primary">{currentIndex + 1} / {frozenWords.length}</span>
+            <span className="text-sm md:text-lg font-black text-primary">{currentIndex + 1} / {frozenWords.length}</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <button
               onClick={() => setIsStarted(false)}
-              className="text-sm font-black text-text-sub hover:text-primary transition-colors"
+              className="text-xs md:text-sm font-black text-text-sub hover:text-primary transition-colors"
             >
               退出
             </button>
-            <div className="h-4 w-px bg-border-main" />
+            <div className="h-3 md:h-4 w-px bg-border-main" />
             <button
               onClick={() => setCurrentIndex(0)}
-              className="flex items-center gap-2 text-sm font-black text-text-sub hover:text-primary transition-colors"
+              className="flex items-center gap-1 md:gap-2 text-xs md:text-sm font-black text-text-sub hover:text-primary transition-colors"
             >
-              <RotateCcw size={16} />
+              <RotateCcw size={14} md:size={16} />
               重来
             </button>
           </div>
         </div>
 
         {/* Flashcard */}
-        <div className="perspective-1000 relative h-[480px] w-full cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
+        <div className="perspective-1000 relative h-[320px] xs:h-[400px] md:h-[480px] w-full cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
           <AnimatePresence mode="wait">
             <motion.div
               key={isFlipped ? 'back' : 'front'}
@@ -723,7 +710,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ words, onToggleMastered })
               exit={{ rotateY: isFlipped ? 90 : -90, opacity: 0 }}
               transition={{ duration: 0.4, ease: "easeInOut" }}
               className={cn(
-                "absolute inset-0 flex flex-col items-center justify-center rounded-[60px] p-12 text-center border-8 transition-all bubble-shadow",
+                "absolute inset-0 flex flex-col items-center justify-center rounded-[40px] md:rounded-[60px] p-6 md:p-12 text-center border-4 md:border-8 transition-all bubble-shadow",
                 isFlipped 
                   ? (currentWord.mastered ? "bg-success text-white border-white" : "bg-primary text-white border-white")
                   : "bg-white text-text-main border-border-main"
@@ -735,43 +722,43 @@ export const StudyMode: React.FC<StudyModeProps> = ({ words, onToggleMastered })
                   onToggleMastered(currentWord.word);
                 }}
                 className={cn(
-                  "absolute top-8 right-8 flex items-center gap-2 px-4 py-2 rounded-2xl font-black text-sm transition-all bubble-shadow",
+                  "absolute top-4 right-4 md:top-8 md:right-8 flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-xl md:rounded-2xl font-black text-[10px] md:text-sm transition-all bubble-shadow",
                   currentWord.mastered 
                     ? "bg-white text-text-main" 
                     : (isFlipped ? "bg-white/20 text-white border-2 border-white/50" : "bg-bg-main text-text-sub border-2 border-border-main")
                 )}
               >
-                {currentWord.mastered ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-                {currentWord.mastered ? '已掌握' : '标记掌握'}
+                {currentWord.mastered ? <CheckCircle2 size={14} md:size={18} /> : <Circle size={14} md:size={18} />}
+                <span>{currentWord.mastered ? '掌握' : '标记'}</span>
               </button>
 
               {!isFlipped ? (
-                <div className="space-y-8">
+                <div className="space-y-4 md:space-y-8">
                   <h3 className={cn(
-                    "text-8xl font-black tracking-tighter drop-shadow-sm",
+                    "text-5xl md:text-8xl font-black tracking-tighter drop-shadow-sm break-all leading-tight px-4",
                     currentWord.mastered ? "text-text-main" : "text-primary"
                   )}>{currentWord.word}</h3>
-                  <p className="text-2xl text-text-sub font-bold">{currentWord.phonetic}</p>
+                  <p className="text-lg md:text-2xl text-text-sub font-bold">{currentWord.phonetic}</p>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       speak(currentWord.word);
                     }}
-                    className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform hover:scale-110 border-4 border-primary/20"
+                    className="mx-auto flex h-16 w-16 md:h-20 md:w-20 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform hover:scale-110 border-2 md:border-4 border-primary/20"
                   >
-                    <Volume2 size={40} />
+                    <Volume2 size={32} md:size={40} />
                   </button>
-                  <div className="bg-bg-main px-6 py-2 rounded-full border-2 border-border-main inline-block">
-                    <p className="text-sm font-black text-text-sub uppercase tracking-widest animate-pulse">点我翻面看答案哦</p>
+                  <div className="bg-bg-main px-4 md:px-6 py-1.5 md:py-2 rounded-full border-2 border-border-main inline-block">
+                    <p className="text-[10px] md:text-sm font-black text-text-sub uppercase tracking-widest animate-pulse">点我看答案</p>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-10 w-full text-center">
-                  <div className="space-y-4">
-                    <p className="text-sm font-black uppercase tracking-[0.3em] opacity-70">中文意思</p>
-                    <h3 className="text-6xl font-bold leading-tight">{currentWord.translation}</h3>
+                <div className="space-y-6 md:space-y-10 w-full text-center px-4">
+                  <div className="space-y-2 md:space-y-4">
+                    <p className="text-[10px] md:text-sm font-black uppercase tracking-[0.2em] md:tracking-[0.3em] opacity-70">翻译</p>
+                    <h3 className="text-3xl md:text-6xl font-bold leading-tight">{currentWord.translation}</h3>
                   </div>
-                  <div className="h-2 bg-white/20 rounded-full w-24 mx-auto" />
+                  <div className="h-1 md:h-2 bg-white/20 rounded-full w-16 md:w-24 mx-auto" />
                   
                   <AnimatePresence>
                     {showDetails && (
@@ -779,16 +766,16 @@ export const StudyMode: React.FC<StudyModeProps> = ({ words, onToggleMastered })
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="space-y-4 overflow-hidden"
+                        className="space-y-2 md:space-y-4 overflow-hidden"
                       >
-                        <p className="text-sm font-black uppercase tracking-[0.3em] opacity-70">英文解释</p>
-                        <p className="text-2xl leading-relaxed font-bold">{currentWord.definition}</p>
+                        <p className="text-[10px] md:text-sm font-black uppercase tracking-[0.2em] md:tracking-[0.3em] opacity-70">英文解释</p>
+                        <p className="text-base md:text-2xl leading-relaxed font-bold line-clamp-4">{currentWord.definition}</p>
                       </motion.div>
                     )}
                   </AnimatePresence>
 
                   {!showDetails && (
-                    <p className="text-sm font-black opacity-50 italic">点击下方按钮查看详情</p>
+                    <p className="text-xs md:text-sm font-black opacity-50 italic">点击下方详情</p>
                   )}
                 </div>
               )}

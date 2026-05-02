@@ -15,27 +15,28 @@ export const Header: React.FC<HeaderProps> = ({ mode, setMode, hasWords, progres
   const unmasteredCount = progress ? progress.total - progress.current : 0;
 
   return (
-    <header className="h-20 bg-white border-b-4 border-border-main flex items-center justify-between px-6 shrink-0 sticky top-0 z-50 rounded-b-[32px] shadow-sm">
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2">
-          <div className="bg-primary p-2 rounded-2xl rotate-3 shadow-sm">
-            <Heart className="text-white fill-white" size={24} />
+    <header className="h-16 md:h-20 bg-white border-b-2 md:border-b-4 border-border-main flex items-center justify-between px-3 md:px-6 shrink-0 sticky top-0 z-50 rounded-b-[24px] md:rounded-b-[32px] shadow-sm">
+      <div className="flex items-center gap-2 md:gap-6 w-full md:w-auto">
+        <div className="flex items-center gap-1 md:gap-2 shrink-0">
+          <div className="bg-primary p-1.5 md:p-2 rounded-xl md:rounded-2xl rotate-3 shadow-sm">
+            <Heart className="text-white fill-white" size={18} md:size={24} />
           </div>
-          <div className="text-2xl font-bold text-primary tracking-wide">
+          <div className="text-lg md:text-2xl font-bold text-primary tracking-wide hidden sm:block">
             小状元背单词
           </div>
         </div>
         
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-1 md:gap-2 grow md:grow-0 justify-center md:justify-start">
           <button
             onClick={() => setMode('input')}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-2xl text-base font-bold transition-all bubble-shadow-hover",
+              "flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-xl md:rounded-2xl text-sm md:text-base font-bold transition-all bubble-shadow-hover shrink-0",
               mode === 'input' ? "bg-primary text-white" : "bg-white text-text-sub border-2 border-border-main"
             )}
           >
-            <Sparkles size={18} />
-            添加单词
+            <Sparkles size={16} md:size={18} />
+            <span className="hidden xs:inline">添加</span>
+            <span className="xs:hidden">添加</span>
           </button>
           
           {hasWords && (
@@ -43,14 +44,15 @@ export const Header: React.FC<HeaderProps> = ({ mode, setMode, hasWords, progres
               <button
                 onClick={() => setMode('list')}
                 className={cn(
-                  "relative flex items-center gap-2 px-4 py-2 rounded-2xl text-base font-bold transition-all bubble-shadow-hover",
+                  "relative flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-xl md:rounded-2xl text-sm md:text-base font-bold transition-all bubble-shadow-hover shrink-0",
                   mode === 'list' ? "bg-secondary text-white" : "bg-white text-text-sub border-2 border-border-main"
                 )}
               >
-                <Library size={18} />
-                单词本
+                <Library size={16} md:size={18} />
+                <span className="hidden xs:inline">单词本</span>
+                <span className="xs:hidden">库</span>
                 {unmasteredCount > 0 && (
-                  <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[10px] text-white border-2 border-white shadow-sm">
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[8px] md:text-[10px] text-white border-2 border-white shadow-sm">
                     {unmasteredCount}
                   </span>
                 )}
@@ -58,12 +60,13 @@ export const Header: React.FC<HeaderProps> = ({ mode, setMode, hasWords, progres
               <button
                 onClick={() => setMode('study')}
                 className={cn(
-                  "relative flex items-center gap-2 px-4 py-2 rounded-2xl text-base font-bold transition-all bubble-shadow-hover",
+                  "relative flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-xl md:rounded-2xl text-sm md:text-base font-bold transition-all bubble-shadow-hover shrink-0",
                   mode === 'study' ? "bg-accent text-white" : "bg-white text-text-sub border-2 border-border-main"
                 )}
               >
-                <Gamepad2 size={18} />
-                开始挑战
+                <Gamepad2 size={16} md:size={18} />
+                <span className="hidden xs:inline">开始挑战</span>
+                <span className="xs:hidden">挑战</span>
               </button>
             </>
           )}

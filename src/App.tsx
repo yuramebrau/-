@@ -118,10 +118,9 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="py-12 text-center border-t-4 border-border-main bg-white rounded-t-[48px]">
-        <p className="text-lg font-bold text-primary tracking-widest">✨ 陪宝贝一起成长的背单词神器 ✨</p>
-        <p className="text-sm font-bold text-text-sub/60 mt-3 italic">© 2026 小状元 · AI 智能单词助手</p>
+      <footer className="py-8 md:py-12 text-center border-t-4 border-border-main bg-white rounded-t-[32px] md:rounded-t-[48px]">
+        <p className="text-base md:text-lg font-bold text-primary tracking-widest px-4">✨ 陪宝贝一起成长的背单词神器 ✨</p>
+        <p className="text-xs md:text-sm font-bold text-text-sub/60 mt-2 md:mt-3 italic">© 2026 小状元 · AI 智能单词助手</p>
       </footer>
     </div>
   );

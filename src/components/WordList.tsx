@@ -66,6 +66,26 @@ const WordCard: React.FC<WordCardProps> = ({ entry, onToggleMastered, onDelete, 
               </button>
             </div>
             <p className="text-base md:text-xl text-text-sub font-bold">{entry.phonetic}</p>
+            {entry.nextReviewDate && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                <div className="h-2 w-2 rounded-full bg-primary" />
+                <span className="text-xs font-black text-primary/70">
+                  {new Date(entry.nextReviewDate).toLocaleDateString() === new Date().toLocaleDateString() 
+                    ? "今日待复习" 
+                    : `下次复习: ${new Date(entry.nextReviewDate).getMonth() + 1}月${new Date(entry.nextReviewDate).getDate()}日`}
+                </span>
+                {entry.addedDate && (
+                  <span className="text-[10px] bg-bg-main px-2 py-0.5 rounded-full border border-border-main text-text-sub">
+                    学习于: {new Date(entry.addedDate).toLocaleDateString()}
+                  </span>
+                )}
+                {entry.repetitionCount !== undefined && entry.repetitionCount > 0 && (
+                  <span className="text-[10px] bg-bg-main px-2 py-0.5 rounded-full border border-border-main text-text-sub">
+                    已复习 {entry.repetitionCount} 次
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
         

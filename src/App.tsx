@@ -4,6 +4,7 @@ import { Header } from './components/Header';
 import { UploadZone } from './components/UploadZone';
 import { WordList } from './components/WordList';
 import { StudyMode } from './components/StudyMode';
+import { AntiForgetting } from './components/AntiForgetting';
 import { processWords } from './services/gemini';
 import { WordEntry, AppMode } from './types';
 import { unlockSpeech } from './lib/speech';
@@ -35,7 +36,13 @@ export default function App() {
       try {
         const parsed = JSON.parse(savedWords);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setWords(parsed);
+          // Migration: Ensure all old words have an addedDate
+          const now = Date.now();
+          const migratedWords = parsed.map((w, index) => ({
+            ...w,
+            addedDate: w.addedDate || (now - (parsed.length - index) * 1000)
+          }));
+          setWords(migratedWords);
           setMode('list');
         }
       } catch (e) {
@@ -55,7 +62,13 @@ export default function App() {
     setIsProcessing(true);
     try {
       const newWords = await processWords(input);
-      setWords((prev) => [...newWords, ...prev]);
+      const now = Date.now();
+      const wordsWithMetadata = newWords.map((w, index) => ({
+        ...w,
+        addedDate: now + index, // Ensure slightly different timestamps
+        mastered: false
+      }));
+      setWords((prev) => [...wordsWithMetadata, ...prev]);
       setMode('list');
     } catch (error) {
       console.error('Processing failed:', error);
@@ -83,6 +96,12 @@ export default function App() {
     setWords((prev) => prev.filter((w) => !wordsToDelete.includes(w.word)));
   };
 
+  const handleUpdateSRS = (word: string, srsData: Partial<WordEntry>) => {
+    setWords((prev) =>
+      prev.map((w) => (w.word === word ? { ...w, ...srsData } : w))
+    );
+  };
+
   const masteredCount = words.filter(w => w.mastered).length;
 
   return (
@@ -92,6 +111,7 @@ export default function App() {
         setMode={setMode} 
         hasWords={words.length > 0} 
         progress={words.length > 0 ? { current: masteredCount, total: words.length } : undefined}
+        words={words}
       />
       
       <main className="flex-1 overflow-auto">
@@ -113,6 +133,10 @@ export default function App() {
         
         {mode === 'study' && words.length > 0 && (
           <StudyMode words={words} onToggleMastered={toggleMastered} />
+        )}
+
+        {mode === 'review' && words.length > 0 && (
+          <AntiForgetting words={words} onUpdateSRS={handleUpdateSRS} />
         )}
 
         {words.length === 0 && mode !== 'input' && (
